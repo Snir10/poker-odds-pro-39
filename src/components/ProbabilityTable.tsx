@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { HAND_RANKS, type SimulationResult } from '@/lib/poker';
-import { ArrowUp } from 'lucide-react';
+import { ArrowUp, ArrowDown, User, Users } from 'lucide-react';
 
 interface ProbabilityTableProps {
   results: SimulationResult | null;
@@ -20,6 +20,9 @@ const HAND_COLORS: Record<string, string> = {
   'Pair': 'from-lime-500 to-green-400',
 };
 
+// Hands that are "collective" (involve community cards heavily)
+const COLLECTIVE_HANDS = new Set(['Flush', 'Straight', 'Straight Flush', 'Royal Flush']);
+
 export function ProbabilityTable({ results, previousResults, loading }: ProbabilityTableProps) {
   return (
     <div className="space-y-2">
@@ -27,8 +30,11 @@ export function ProbabilityTable({ results, previousResults, loading }: Probabil
         {HAND_RANKS.map((hand, i) => {
           const pct = results?.[hand] ?? 0;
           const prevPct = previousResults?.[hand] ?? 0;
-          const improved = results && previousResults && pct > prevPct + 0.1;
+          const delta = results && previousResults ? pct - prevPct : 0;
+          const improved = delta > 0.1;
+          const worsened = delta < -0.1;
           const barWidth = Math.min(pct, 100);
+          const isCollective = COLLECTIVE_HANDS.has(hand);
 
           return (
             <motion.div
@@ -36,20 +42,17 @@ export function ProbabilityTable({ results, previousResults, loading }: Probabil
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.03 }}
-              className="flex items-center gap-3"
+              className="flex items-center gap-2 sm:gap-3"
             >
-              <div className="w-28 sm:w-36 text-xs sm:text-sm font-medium text-secondary-foreground flex items-center gap-1 shrink-0">
-                {hand}
-                {improved && (
-                  <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="text-primary"
-                  >
-                    <ArrowUp className="w-3 h-3" />
-                  </motion.span>
-                )}
+              {/* Type icon */}
+              <div className="w-5 shrink-0 flex justify-center text-muted-foreground/50">
+                {isCollective ? <Users className="w-3.5 h-3.5" /> : <User className="w-3.5 h-3.5" />}
               </div>
+
+              <div className="w-24 sm:w-32 text-xs sm:text-sm font-medium text-secondary-foreground flex items-center gap-1 shrink-0">
+                {hand}
+              </div>
+
               <div className="flex-1 probability-bar">
                 <motion.div
                   className={`h-full rounded-full bg-gradient-to-r ${HAND_COLORS[hand]}`}
@@ -58,9 +61,27 @@ export function ProbabilityTable({ results, previousResults, loading }: Probabil
                   transition={{ duration: 0.7, ease: 'easeOut' }}
                 />
               </div>
-              <span className={`w-16 text-right text-xs sm:text-sm font-mono font-semibold ${loading ? 'text-muted-foreground animate-pulse' : improved ? 'text-primary' : 'text-secondary-foreground'}`}>
-                {results ? (pct < 0.01 && pct > 0 ? '<0.01%' : `${pct.toFixed(2)}%`) : '—'}
+
+              {/* Percentage */}
+              <span className={`w-14 text-right text-xs sm:text-sm font-mono font-semibold ${loading ? 'text-muted-foreground animate-pulse' : improved ? 'text-primary' : worsened ? 'text-destructive' : 'text-secondary-foreground'}`}>
+                {results ? (pct < 0.01 && pct > 0 ? '<.01%' : `${pct.toFixed(2)}%`) : '—'}
               </span>
+
+              {/* Delta indicator */}
+              <div className="w-14 shrink-0 text-right">
+                {results && previousResults && Math.abs(delta) > 0.1 ? (
+                  <motion.span
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className={`inline-flex items-center gap-0.5 text-[10px] font-mono font-semibold ${improved ? 'text-primary' : 'text-destructive'}`}
+                  >
+                    {improved ? <ArrowUp className="w-2.5 h-2.5" /> : <ArrowDown className="w-2.5 h-2.5" />}
+                    {delta > 0 ? '+' : ''}{delta.toFixed(1)}%
+                  </motion.span>
+                ) : (
+                  <span className="text-[10px] text-muted-foreground/30">—</span>
+                )}
+              </div>
             </motion.div>
           );
         })}
