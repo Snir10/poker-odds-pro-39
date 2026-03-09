@@ -1,11 +1,12 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { RotateCcw, Shuffle, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, cardId, runSimulation, getRandomCards, SimulationResult } from '@/lib/poker';
 import { CardPicker } from '@/components/CardPicker';
 import { ProbabilityTable } from '@/components/ProbabilityTable';
 import { TableDisplay } from '@/components/TableDisplay';
+import { SplashScreen } from '@/components/SplashScreen';
 
 type Stage = 0 | 1 | 2 | 3 | 4;
 
@@ -18,6 +19,7 @@ const STAGE_CONFIG: { label: string; pick: number; total: number }[] = [
 ];
 
 export default function Index() {
+  const [showSplash, setShowSplash] = useState(true);
   const [stage, setStage] = useState<Stage>(0);
   const [holeCards, setHoleCards] = useState<Card[]>([]);
   const [communityCards, setCommunityCards] = useState<Card[]>([]);
@@ -25,6 +27,7 @@ export default function Index() {
   const [results, setResults] = useState<SimulationResult | null>(null);
   const [prevResults, setPrevResults] = useState<SimulationResult | null>(null);
   const [simulating, setSimulating] = useState(false);
+  const [numPlayers, setNumPlayers] = useState(6);
   const workerTimeout = useRef<ReturnType<typeof setTimeout>>();
 
   const allSelected = [...holeCards, ...communityCards];
@@ -96,8 +99,17 @@ export default function Index() {
     }, 50);
   }, [reset]);
 
+  if (showSplash) {
+    return <SplashScreen onComplete={() => setShowSplash(false)} />;
+  }
+
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      className="min-h-screen bg-background flex flex-col"
+    >
       {/* Header */}
       <header className="border-b border-border px-4 py-3 flex items-center justify-between">
         <div>
@@ -118,7 +130,13 @@ export default function Index() {
 
       <main className="flex-1 max-w-lg mx-auto w-full px-4 py-4 space-y-4">
         {/* Table Display */}
-        <TableDisplay holeCards={holeCards} communityCards={communityCards} stage={stage} />
+        <TableDisplay
+          holeCards={holeCards}
+          communityCards={communityCards}
+          stage={stage}
+          numPlayers={numPlayers}
+          onPlayersChange={setNumPlayers}
+        />
 
         {/* Card Picker */}
         {stage < 4 && (
@@ -174,6 +192,6 @@ export default function Index() {
           <ProbabilityTable results={results} previousResults={prevResults} loading={simulating} />
         </motion.div>
       </main>
-    </div>
+    </motion.div>
   );
 }
