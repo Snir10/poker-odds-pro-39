@@ -1,4 +1,4 @@
-import { Card, RANKS, SUITS, cardId, SUIT_SYMBOLS, isRed } from '@/lib/poker';
+import { Card, RANKS, SUITS, cardId, SUIT_SYMBOLS, RANK_DISPLAY, isRed } from '@/lib/poker';
 import { motion } from 'framer-motion';
 
 interface CardPickerProps {
@@ -13,9 +13,9 @@ export function CardPicker({ selectedCards, disabledCards, maxSelect, onToggle }
   const disabledIds = new Set(disabledCards.map(cardId));
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5">
       {SUITS.map(suit => (
-        <div key={suit} className="flex gap-1 justify-center flex-wrap">
+        <div key={suit} className="flex gap-1 sm:gap-1.5 justify-center flex-wrap">
           {RANKS.map(rank => {
             const card: Card = { rank, suit };
             const id = cardId(card);
@@ -27,23 +27,23 @@ export function CardPicker({ selectedCards, disabledCards, maxSelect, onToggle }
             return (
               <motion.button
                 key={id}
-                whileHover={!isDisabled && !atMax ? { scale: 1.15, y: -2 } : undefined}
-                whileTap={!isDisabled && !atMax ? { scale: 0.9 } : undefined}
+                whileHover={!isDisabled && !atMax ? { scale: 1.12, y: -3 } : undefined}
+                whileTap={!isDisabled && !atMax ? { scale: 0.92 } : undefined}
                 onClick={() => !isDisabled && !atMax && onToggle(card)}
                 disabled={isDisabled || atMax}
                 className={`
-                  w-8 h-11 sm:w-9 sm:h-12 rounded-md border text-xs font-bold flex flex-col items-center justify-center gap-0 transition-all duration-150
+                  w-10 h-14 sm:w-11 sm:h-[3.8rem] rounded-lg border text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all duration-150
                   ${isSelected
-                    ? 'bg-primary/20 border-primary shadow-md shadow-primary/20 ring-1 ring-primary/50'
+                    ? 'bg-primary/20 border-primary shadow-lg shadow-primary/25 ring-2 ring-primary/50 scale-105'
                     : isDisabled || atMax
-                      ? 'bg-muted/20 border-border/30 opacity-25 cursor-not-allowed'
-                      : 'bg-card border-border hover:border-muted-foreground/50 cursor-pointer'
+                      ? 'bg-muted/10 border-border/20 opacity-20 cursor-not-allowed'
+                      : 'bg-card border-border/60 hover:border-muted-foreground/50 hover:bg-card/80 cursor-pointer shadow-sm'
                   }
                   ${red ? 'text-[hsl(var(--suit-hearts))]' : 'text-[hsl(var(--suit-clubs))]'}
                 `}
               >
-                <span className="text-mono leading-none">{rank === 'T' ? '10' : rank}</span>
-                <span className="text-[0.7em] leading-none">{SUIT_SYMBOLS[suit]}</span>
+                <span className="text-mono leading-none font-extrabold text-[0.85rem]">{RANK_DISPLAY[rank]}</span>
+                <span className="text-[0.75rem] leading-none">{SUIT_SYMBOLS[suit]}</span>
               </motion.button>
             );
           })}
